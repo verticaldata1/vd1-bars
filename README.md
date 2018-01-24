@@ -1,1 +1,1 @@
-# vd1-bars
+Bar coordiation app
