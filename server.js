@@ -9,6 +9,8 @@ var session = require("express-session");
 var passport = require("passport");
 var flash = require("connect-flash");
 var setUpPassport = require("./config/passport");
+var methodOverride = require("method-override");
+var fetch = require("node-fetch");
 
 var app = express();
 setUpPassport();
@@ -18,6 +20,7 @@ app.set("view engine", "ejs");
 
 mongoose.connect("mongodb://vd1:vd1-master@ds157667.mlab.com:57667/vd1_bar_reservations");
 
+/* middleware */
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
@@ -29,6 +32,7 @@ app.use(session ({
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(methodOverride());
 
 app.use(function(req, res, next) {
   res.locals.currentUser = req.user;
@@ -38,16 +42,32 @@ app.use(function(req, res, next) {
 });
 
 
-// route for home page
+
+
 app.get('/', function(req, res) {
     res.render('index.ejs'); // load the index.ejs file
 });
 
-// route for login form
-// route for processing the login form
-// route for signup form
-// route for processing the signup form
+app.get('/search/:term', function(req, res) {
+  var term = req.params.term;
+  
+  var options = {
+    method: 'GET',
+    headers: {"Authorization": "Bearer j6GM5D7sGhjXE1-2NbspX7sRmdHZAOqOKy32007tuP0sy2QT5MAUoKNhjfnmAivUkz0teo5fVps1mkS6opEUSVGMxYgTyFIUuOTNEGNjsUVdgmqIBCBinamGotJoWnYx"}    
+  };
+  
+  var fetchTerm = "https://api.yelp.com/v3/businesses/search?location="+term;
+  var fetchJson = fetch(fetchTerm, options).then(function(res) {
+    console.log("got fetch result");
+    return res.json();
+  }).then(function(json) {
+    res.json(json);
+  });   
+  
+});
 
+
+/* authentication */
 // route for showing the profile page
 app.get('/profile', isAuthenticated, function(req, res) {
     res.render('profile.ejs');
