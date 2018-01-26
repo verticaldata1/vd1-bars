@@ -18,7 +18,10 @@
             <img class="result-image" alt="image" src="{{yelp.image_url}}">
             <div class="yelp-div flex-container">    
               <a class="yelp-item-title" href={{yelp.url}} target="_blank" >{{yelp.name}}</a>
-              <p class="yelp-item-people">{{yelp.people.length}} going. {{yelp.people.length > 0 ? yelp.people : ""}}</p>
+              <p class="yelp-item-num-people">{{yelp.people.length}} going.</p>
+              <div class="yelp-item-person">
+                <a ng-repeat="person in yelp.people" href="https://www.facebook.com/{{person.id}}" target="_blank"> |{{person.name}}|</a>  
+              </div>              
               <% if(currentUser) { %>
                 <button class="btn btn-primary btn-sm yelp-item-button" ng-click="addBooking(yelp.id)">Add me</button>
               <% } else { %>

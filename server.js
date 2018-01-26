@@ -85,7 +85,17 @@ app.get('/search/:term', function(req, res, next) {
         json.businesses[ii].people = [];
         for(var bb = 0; bb < bookings.length; bb++) {
           if(json.businesses[ii].id == bookings[bb].business) {
-             json.businesses[ii].people = bookings[bb].people;
+            var peopleList = [];
+            console.log("chopping last names from:"+bookings[bb].people);
+            for(var xx = 0; xx < bookings[bb].people.length; xx++) {
+              var person_id = bookings[bb].people_ids[xx];
+              var person = bookings[bb].people[xx];
+              person = person.split(" ");
+              person = person[0];
+              person = {name: person, id: person_id};
+              peopleList.push(person);
+            }
+            json.businesses[ii].people = peopleList;
           }
         }
       }
@@ -120,8 +130,18 @@ app.post("/book", function(req, res, next) {
           next(err);
           return;
         }      
-        console.log("Updated booking");        
-        return res.json({people: curPeople});        
+        console.log("Updated booking");  
+        var peopleList = [];
+        console.log("chopping last names from:"+curPeople);
+        for(var xx = 0; xx < curPeople.length; xx++) {
+          var person_id = curPeopleIds[xx];
+          var person = curPeople[xx];
+          person = person.split(" ");
+          person = person[0];
+          person = {name: person, id: person_id};
+          peopleList.push(person);
+        }
+        return res.json({people: peopleList});        
       });
     }
     else {    
@@ -133,8 +153,18 @@ app.post("/book", function(req, res, next) {
         people_ids: curPeopleIds
       });
       newBooking.save();
-      console.log("Saved new booking");        
-      return res.json({people: curPeople});    
+      console.log("Saved new booking");     
+      var peopleList = [];
+      console.log("chopping last names from:"+curPeople);
+      for(var xx = 0; xx < curPeople.length; xx++) {
+        var person_id = curPeopleIds[xx];
+        var person = curPeople[xx];
+        person = person.split(" ");
+        person = person[0];
+        person = {name: person, id: person_id};
+        peopleList.push(person);
+      }
+      return res.json({people: peopleList});   
     }
     
   });    

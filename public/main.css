@@ -33,6 +33,16 @@
   text-align: left;
   padding-left: 5px;
 }
+.yelp-item-num-people{
+  flex-basis: 10%;
+  text-align: left;
+  padding-left: 5px;
+}
+.yelp-item-person{
+  flex-basis: 45%;
+  text-align: left;
+  padding-left: 5px;
+}
 .yelp-item-button{
   flex-basis: 20%;
   text-align: center;
