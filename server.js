@@ -11,6 +11,7 @@ var flash = require("connect-flash");
 var setUpPassport = require("./config/passport");
 var methodOverride = require("method-override");
 var fetch = require("node-fetch");
+var Booking = require("./models/booking");
 
 var app = express();
 setUpPassport();
@@ -45,11 +46,22 @@ app.use(function(req, res, next) {
 
 
 app.get('/', function(req, res) {
-    res.render('index.ejs'); // load the index.ejs file
+    if(req.cookies.initLogin == 1) {
+      console.log("saw initLogin"); 
+      res.cookie('initLogin', 0);
+      res.locals.loginReturn = 1;
+      res.locals.previousS= req.cookies.previousSearch;
+      console.log("Grabbed previous as:"+res.locals.previousS);
+    }
+    else {
+      res.locals.loginReturn = 0;
+    }
+    res.render('index.ejs');
 });
 
-app.get('/search/:term', function(req, res) {
+app.get('/search/:term', function(req, res, next) {
   var term = req.params.term;
+  res.cookie('previousSearch', term);
   
   var options = {
     method: 'GET',
@@ -61,35 +73,152 @@ app.get('/search/:term', function(req, res) {
     console.log("got fetch result");
     return res.json();
   }).then(function(json) {
-    res.json(json);
+    var ids = [];
+    for(var ii = 0; ii < 20; ii++) {
+      ids.push(json.businesses[ii].id);
+    }
+    
+    Booking.find({business: { $in: ids } }, function(err, bookings) {
+      if(err) { return next(err); }
+      
+      for(var ii = 0; ii < 20; ii++) {
+        json.businesses[ii].people = [];
+        for(var bb = 0; bb < bookings.length; bb++) {
+          if(json.businesses[ii].id == bookings[bb].business) {
+             json.businesses[ii].people = bookings[bb].people;
+          }
+        }
+      }
+      res.json(json);
+    });      
+    
   });   
   
 });
 
-
-/* authentication */
-// route for showing the profile page
-app.get('/profile', isAuthenticated, function(req, res) {
-    res.render('profile.ejs');
+app.post("/book", function(req, res, next) {
+  console.log("post book business="+req.body.business_id+" user="+req.user.facebook.name);
+  
+  Booking.findOne({business: req.body.business_id }, function(err, booking) {
+    if(err) { return next(err); }
+    
+    var curPeople = [];
+    var curPeopleIds = [];
+    
+    if(booking) {
+      if(booking.people_ids.indexOf(req.user.facebook.id) !== -1) {
+        console.log("User already saved in booking");
+        return res.json({people: []});    
+      }
+      curPeople = booking.people;
+      curPeopleIds = booking.people_ids;
+      curPeople.push(req.user.facebook.name);
+      curPeopleIds.push(req.user.facebook.id);
+      Booking.update({business: req.body.business_id}, {people: curPeople, people_ids: curPeopleIds}, function(err) {
+        if(err) {
+          console.log(err);
+          next(err);
+          return;
+        }      
+        console.log("Updated booking");        
+        return res.json({people: curPeople});        
+      });
+    }
+    else {    
+      curPeople.push(req.user.facebook.name);
+      curPeopleIds.push(req.user.facebook.id);
+      var newBooking = new Booking({
+        business: req.body.business_id,
+        people: curPeople, 
+        people_ids: curPeopleIds
+      });
+      newBooking.save();
+      console.log("Saved new booking");        
+      return res.json({people: curPeople});    
+    }
+    
+  });    
 });
 
+
+
+app.get("/profile/:id", function(req, res, next) {
+  res.locals.user_id = req.params.id;
+  
+  Booking.find({people_ids: req.params.id}, function(err, bookings) {
+    if(err) { return next(err); }
+    
+    res.locals.userBookings = [];
+    if(bookings) {
+      for(var ii = bookings.length - 1; ii >= 0; ii--) {
+        var title = bookings[ii].business;
+        var deleteLink = "/delete/"+bookings[ii].business;
+        res.locals.userBookings.push({title: title, deleteLink: deleteLink});
+      }
+    }    
+    res.render("profile");
+  });
+  
+});
+
+app.get("/delete/:num", isAuthenticated, function(req, res, next) {
+  var business_id = req.params.num;
+  
+  Booking.findOne({business: business_id}, function(err, booking) {
+    if(err) { return next(err); }
+    if(!booking) {
+      req.flash("error", "Deletion error. Booking not found.");
+      return res.redirect("/");
+    }
+    var userIdx = booking.people_ids.indexOf(req.user.facebook.id);
+    if(userIdx == -1) {
+      req.flash("error", "Deletion error. User not found in booking");
+      return res.redirect("/");
+    }
+    booking.people_ids.splice(userIdx,1);
+    booking.people.splice(userIdx,1);
+    Booking.update({business: business_id}, {people: booking.people, people_ids: booking.people_ids}, function(err) {
+      if(err) {
+        console.log(err);
+        next(err);
+        return;
+      }      
+      console.log("Removed user from booking");      
+      res.redirect("/profile/"+res.locals.currentUser.facebook.id);
+    });   
+  });
+});
+     
+
+
+/* authentication */
+
 // route for facebook authentication and login
-app.get('/auth/facebook', passport.authenticate('facebook', { 
+app.get('/auth/facebook', setLoginFlag, passport.authenticate('facebook', { 
   scope : ['public_profile', 'email']
 }));
 
 // handle the callback after facebook has authenticated the user
 app.get('/auth/facebook/callback', passport.authenticate('facebook', {
-    successRedirect : '/profile',
+    successRedirect : "/",
     failureRedirect : '/'
 }));
 
 // route for logging out
-app.get('/logout', function(req, res) {
+app.get('/logout', clearSearch, function(req, res) {
     req.logout();
     res.redirect('/');
 });
 
+function setLoginFlag(req,res,next) {
+  res.cookie('initLogin', 1);
+  next();
+}
+
+function clearSearch(req, res, next) {
+  res.cookie('previousSearch', "");
+  next();
+}
 
 function isAuthenticated(req,res,next) {
   if(req.isAuthenticated()){

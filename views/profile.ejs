@@ -2,29 +2,20 @@
 
 
 <div class="container">
-    <div class="page-header text-center">
-        <h1><span class="fa fa-anchor"></span> Profile Page</h1>
-        <a href="/logout" class="btn btn-default btn-sm">Logout</a>
+    <div class="text-center">
+      <h1><span class="fa fa-id-card-o"></span>  <%= currentUser.facebook.name %>'s plans:</h1>
+      
+      <% userBookings.forEach(function(data) { %>
+        <div class="yelp-div flex-container well">    
+          <% if(currentUser && currentUser.facebook.id == user_id) { %>
+            <p><%=data.title%></p>       
+            <a href=<%=data.deleteLink%> class="btn btn-danger"><i class="fa fa-trash"></i></a> 
+          <% } else { %>
+            <p><%=data.title%></p>       
+          <% } %>
+        </div>  
+      <% }) %>
     </div>
-
-    <div class="row">
-
-        <!-- FACEBOOK INFORMATION -->
-        <div class="col-sm-6">
-            <div class="well">
-                <h3 class="text-primary"><span class="fa fa-facebook"></span> Facebook</h3>
-
-                    <p>
-                        <strong>id</strong>: <%= currentUser.facebook.id %><br>
-                        <strong>email</strong>: <%= currentUser.facebook.email %><br>
-                        <strong>name</strong>: <%= currentUser.facebook.name %>
-                    </p>
-
-            </div>
-        </div>
-
-    </div>
-
 </div>
 
 </body>
