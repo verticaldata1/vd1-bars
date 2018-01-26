@@ -1,0 +1,22 @@
+<% include _header %>
+
+
+<div class="container">
+    <div class="text-center">
+      <h1><span class="fa fa-id-card-o"></span>  <%= currentUser.facebook.name %>'s plans:</h1>
+      
+      <% userBookings.forEach(function(data) { %>
+        <div class="yelp-div flex-container well">    
+          <% if(currentUser && currentUser.facebook.id == user_id) { %>
+            <p><%=data.title%></p>       
+            <a href=<%=data.deleteLink%> class="btn btn-danger"><i class="fa fa-trash"></i></a> 
+          <% } else { %>
+            <p><%=data.title%></p>       
+          <% } %>
+        </div>  
+      <% }) %>
+    </div>
+</div>
+
+</body>
+</html>

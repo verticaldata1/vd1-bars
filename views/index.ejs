@@ -1,0 +1,46 @@
+<% include _header %>
+
+<div class="container-fluid">
+  <div ng-controller="mainController">    
+    <div class="text-center">
+      <h1>Find out who's going where</h1>
+      <% if(loginReturn && previousS !== "") { %>
+        <input id="searchText" type="text" style="width: 50%" ng-model="searchTerm" required ng-init="searchTerm='<%=previousS%>'" >
+      <% } else { %>
+        <input id="searchText" type="text" style="width: 50%" ng-model="searchTerm" required placeholder="City">
+      <% } %>
+      <button id="searchGo" type="button" class="btn btn-primary btn-sm" ng-click="searchYelp()"><span class="fa fa-search-plus fa-lg"></span></button>
+    </div>
+    <div class="text-center" style="max-width: 60%; min-width: 800px ;margin: auto;">
+      <ul style="list-style: none; margin-top: 20px;">
+        <li ng-repeat="yelp in yelpList | limitTo:20">
+          <div class="well">         
+            <img class="result-image" alt="image" src="{{yelp.image_url}}">
+            <div class="yelp-div flex-container">    
+              <a class="yelp-item-title" href={{yelp.url}} target="_blank" >{{yelp.name}}</a>
+              <p class="yelp-item-num-people">{{yelp.people.length}} going.</p>
+              <div class="yelp-item-person">
+                <a ng-repeat="person in yelp.people" href="https://www.facebook.com/{{person.id}}" target="_blank"> |{{person.name}}|</a>  
+              </div>              
+              <% if(currentUser) { %>
+                <button class="btn btn-primary btn-sm yelp-item-button" ng-click="addBooking(yelp.id)">Add me</button>
+              <% } else { %>
+                <button class="btn btn-primary btn-sm yelp-item-button">Login to RSVP</button>
+              <% } %>
+              <p class="yelp-item-category">{{yelp.categories[0].title}}</p>              
+              <p class="yelp-item-rating">Rating: {{yelp.rating}}/5 ({{yelp.review_count}} reviews)</p>
+              <p class="yelp-item-price">Price: {{yelp.price}}</p>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+  
+
+  </div>
+  
+</div>
+
+</body>
+</html>
